@@ -104,8 +104,9 @@ export const auth = betterAuth({
         },
       });
 
+      // Fall back to original user if DB lookup returns null
       return {
-        user: userFromDB,
+        user: userFromDB ?? user,
         session,
       };
     }),
@@ -113,12 +114,7 @@ export const auth = betterAuth({
   ],
   user: {
     additionalFields: {
-      email: {
-        type: "string",
-      },
-      name: {
-        type: "string",
-      },
+      // NOTE: 'email' and 'name' are built-in Better Auth fields — do NOT add them here
       role: {
         type: "string",
       },
