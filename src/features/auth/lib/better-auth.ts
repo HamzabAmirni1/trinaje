@@ -187,9 +187,13 @@ export const auth = betterAuth({
       clientId: env.GOOGLE_CLIENT_ID,
       clientSecret: env.GOOGLE_CLIENT_SECRET,
       mapProfileToUser: async (profile) => {
+        // DO NOT spread ...profile — it injects unknown Google OAuth fields
+        // (sub, aud, iss, azp, at_hash, etc.) that break the DB insert.
         return {
-          ...profile,
+          name: profile.name || `${profile.given_name || ""} ${profile.family_name || ""}`.trim(),
           email: profile.email,
+          image: profile.picture || null,
+          emailVerified: profile.email_verified ?? false,
           firstName: profile.given_name || "",
           lastName: profile.family_name || "",
           role: UserRole.user,
