@@ -1,0 +1,9 @@
+[build]
+  command = "npx prisma@6.5.0 generate && npx prisma@6.5.0 migrate deploy && pnpm run build"
+  publish = ".next"
+
+[build.environment]
+  NETLIFY_NEXT_PLUGIN_SKIP = "false"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
