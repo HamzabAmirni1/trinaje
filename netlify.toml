@@ -4,6 +4,7 @@
 
 [build.environment]
   NETLIFY_NEXT_PLUGIN_SKIP = "false"
+  PNPM_VERSION = "11.6.0"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
