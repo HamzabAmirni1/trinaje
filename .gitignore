@@ -53,3 +53,7 @@ scripts/personal/
 product-development/
 .claude/
 .cache/
+
+# sensitive local credential files - never commit these
+netlify.env.txt
+smtp-setup.txt
