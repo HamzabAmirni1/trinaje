@@ -203,5 +203,8 @@ export const env = createEnv({
     NEXT_PUBLIC_EZOIC_BOTTOM_TOOLS_PLACEMENT_ID: process.env.NEXT_PUBLIC_EZOIC_BOTTOM_TOOLS_PLACEMENT_ID,
     NEXT_PUBLIC_GA4_MEASUREMENT_ID: process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID,
   },
-  skipValidation: !!process.env.SKIP_ENV_VALIDATION,
+  skipValidation:
+    !!process.env.SKIP_ENV_VALIDATION ||
+    process.env.CI === "true" ||
+    process.env.NEXT_PHASE === "phase-production-build",
 });
