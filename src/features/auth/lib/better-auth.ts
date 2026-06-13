@@ -104,9 +104,9 @@ export const auth = betterAuth({
         },
       });
 
-      // Fall back to original user if DB lookup returns null
+      // Merge DB fields into the Better Auth user (keeps the correct type, avoids null union)
       return {
-        user: userFromDB ?? user,
+        user: { ...user, ...(userFromDB ?? {}) },
         session,
       };
     }),
