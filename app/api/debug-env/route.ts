@@ -16,6 +16,7 @@ export async function GET() {
   };
 
   return NextResponse.json({
+    authErrors: (globalThis as any).authErrors || [],
     BETTER_AUTH_URL: {
       raw: process.env.BETTER_AUTH_URL,
       hasQuotes: process.env.BETTER_AUTH_URL?.startsWith('"') || false
