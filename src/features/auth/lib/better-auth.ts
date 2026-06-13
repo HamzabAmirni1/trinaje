@@ -14,6 +14,12 @@ import { env } from "@/env";
 export const auth = betterAuth({
   // trustedOrigins: [SiteConfig.prodUrl, "localhost:3000", "https://better-auth.com", "http://localhost:3000"],
   trustedOrigins: ["*", "workoutcool://", "expo://"],
+  trustHeaders: true,
+  account: {
+    accountLinking: {
+      enabled: true,
+    },
+  },
   plugins: [
     admin(),
     customSession(async ({ user, session }) => {
@@ -132,8 +138,8 @@ export const auth = betterAuth({
         return {
           ...profile,
           email: profile.email,
-          firstName: profile.given_name,
-          lastName: profile.family_name,
+          firstName: profile.given_name || "",
+          lastName: profile.family_name || "",
           role: UserRole.user,
         };
       },
