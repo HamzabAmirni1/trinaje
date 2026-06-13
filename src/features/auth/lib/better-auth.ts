@@ -12,8 +12,12 @@ import { hashStringWithSalt } from "@/features/update-password/lib/hash";
 import { env } from "@/env";
 
 export const auth = betterAuth({
-  // trustedOrigins: [SiteConfig.prodUrl, "localhost:3000", "https://better-auth.com", "http://localhost:3000"],
-  trustedOrigins: ["*", "workoutcool://", "expo://"],
+  trustedOrigins: [
+    env.NEXT_PUBLIC_APP_URL,
+    "http://localhost:3000",
+    "workoutcool://",
+    "expo://"
+  ],
   trustHeaders: true,
   account: {
     accountLinking: {
