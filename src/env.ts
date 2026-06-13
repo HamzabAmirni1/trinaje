@@ -4,23 +4,14 @@ import { createEnv } from "@t3-oss/env-nextjs";
 const booleanString = z.enum(["true", "false"]).transform((val) => val === "true");
 
 // Strip surrounding quotes and whitespace from env vars
-const cleanString = z.preprocess((val) => {
+const clean = <T extends z.ZodTypeAny>(schema: T) => z.preprocess((val) => {
   if (typeof val !== "string") return val;
   let s = val.trim();
   if ((s.startsWith('"') && s.endsWith('"')) || (s.startsWith("'") && s.endsWith("'"))) {
     s = s.slice(1, -1).trim();
   }
   return s;
-}, z.string());
-
-const cleanUrl = z.preprocess((val) => {
-  if (typeof val !== "string") return val;
-  let s = val.trim();
-  if ((s.startsWith('"') && s.endsWith('"')) || (s.startsWith("'") && s.endsWith("'"))) {
-    s = s.slice(1, -1).trim();
-  }
-  return s;
-}, z.string().url());
+}, schema);
 
 /**
  * This is the schema for the environment variables.
@@ -29,18 +20,18 @@ const cleanUrl = z.preprocess((val) => {
  */
 export const env = createEnv({
   server: {
-    BETTER_AUTH_URL: cleanUrl,
-    DATABASE_URL: cleanUrl,
-    GOOGLE_CLIENT_ID: cleanString.min(1),
-    GOOGLE_CLIENT_SECRET: cleanString.min(1),
+    BETTER_AUTH_URL: clean(z.string().url()),
+    DATABASE_URL: clean(z.string().url()),
+    GOOGLE_CLIENT_ID: clean(z.string().min(1)),
+    GOOGLE_CLIENT_SECRET: clean(z.string().min(1)),
     NODE_ENV: z.enum(["development", "production", "test"]),
-    BETTER_AUTH_SECRET: cleanString.min(1),
-    OPENPANEL_SECRET_KEY: cleanString.optional(),
-    SMTP_HOST: cleanString.optional(),
+    BETTER_AUTH_SECRET: clean(z.string().min(1)),
+    OPENPANEL_SECRET_KEY: clean(z.string().optional()),
+    SMTP_HOST: clean(z.string().optional()),
     SMTP_PORT: z.coerce.number().positive().optional(),
-    SMTP_USER: cleanString.optional(),
-    SMTP_PASS: cleanString.optional(),
-    SMTP_FROM: cleanString.optional(),
+    SMTP_USER: clean(z.string().optional()),
+    SMTP_PASS: clean(z.string().optional()),
+    SMTP_FROM: clean(z.string().optional()),
     //issue fixed in zod 4. See https://github.com/colinhacks/zod/issues/3906
     SMTP_SECURE: booleanString.default("false"),
 
@@ -58,7 +49,7 @@ export const env = createEnv({
   client: {
     NEXT_PUBLIC_OPENPANEL_CLIENT_ID: z.string().optional(),
     NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: z.string().optional(),
-    NEXT_PUBLIC_APP_URL: cleanUrl,
+    NEXT_PUBLIC_APP_URL: clean(z.string().url()),
     NEXT_PUBLIC_STRIPE_PRICE_MONTHLY_EU: z.string().optional(),
     NEXT_PUBLIC_STRIPE_PRICE_YEARLY_EU: z.string().optional(),
     NEXT_PUBLIC_STRIPE_PRICE_MONTHLY_US: z.string().optional(),
