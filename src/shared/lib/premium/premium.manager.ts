@@ -15,9 +15,16 @@ import type { PaymentProvider } from "./providers/base-provider";
  * Easy to extend with new payment providers
  */
 export class PremiumManager {
-  private static providers: Record<string, PaymentProvider> = {
-    stripe: new StripeProvider(),
-  };
+  private static _providers: Record<string, PaymentProvider> | null = null;
+
+  private static get providers(): Record<string, PaymentProvider> {
+    if (!PremiumManager._providers) {
+      PremiumManager._providers = {
+        stripe: new StripeProvider(),
+      };
+    }
+    return PremiumManager._providers;
+  }
 
   /**
    * Get available premium plans with provider mappings
