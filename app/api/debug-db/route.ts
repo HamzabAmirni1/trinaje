@@ -12,9 +12,26 @@ export async function GET() {
   try {
     status.prismaClientInitialized = !!prisma;
     
-    // Test simple count query
-    const count = await prisma.user.count();
-    status.userCount = count;
+    // Test user table
+    const userCount = await prisma.user.count();
+    status.userCount = userCount;
+    status.userTableOk = true;
+
+    // Test session table
+    const sessionCount = await prisma.session.count();
+    status.sessionCount = sessionCount;
+    status.sessionTableOk = true;
+
+    // Test account table
+    const accountCount = await prisma.account.count();
+    status.accountCount = accountCount;
+    status.accountTableOk = true;
+
+    // Test verification table
+    const verificationCount = await prisma.verification.count();
+    status.verificationCount = verificationCount;
+    status.verificationTableOk = true;
+
     status.databaseConnectionOk = true;
   } catch (err: any) {
     status.databaseConnectionOk = false;
