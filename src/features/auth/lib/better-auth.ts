@@ -1,4 +1,4 @@
-import { admin, customSession } from "better-auth/plugins";
+import { admin } from "better-auth/plugins";
 import { nextCookies } from "better-auth/next-js";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { betterAuth } from "better-auth";
@@ -11,64 +11,34 @@ import { sendEmail } from "@/shared/lib/mail/sendEmail";
 import { hashStringWithSalt } from "@/features/update-password/lib/hash";
 import { env } from "@/env";
 
-async function logAuthErrorToDb(level: string, message: string, ...args: any[]) {
-  try {
-    const errorDetails = args.map(a => {
-      if (a instanceof Error) {
-        return { message: a.message, stack: a.stack, name: a.name };
-      }
-      if (typeof a === "object") {
-        try { return JSON.parse(JSON.stringify(a)); } catch (_) { return String(a); }
-      }
-      return String(a);
-    });
-
-    await prisma.feedbacks.create({
-      data: {
-        review: 999,
-        message: `[Better-Auth ${level}] ${message} | Details: ${JSON.stringify(errorDetails)}`,
-        email: "system-auth-error@workout.cool",
-      }
-    });
-  } catch (dbErr) {
-    console.error("Failed to log auth error to DB:", dbErr);
-  }
-}
-
 export const auth = betterAuth({
   logger: {
-    level: "debug",
+    level: "error",
     log: (level, message, ...args) => {
-      console.log(`[Better-Auth ${level}]:`, message, ...args);
-      if (level === "error" || level === "warn") {
-        logAuthErrorToDb(level, message, ...args);
-        const globalErrors = (globalThis as any).authErrors || [];
-        globalErrors.push({
-          timestamp: new Date().toISOString(),
-          level,
-          message,
-          args: args.map(a => {
-            if (a instanceof Error) {
-              return { message: a.message, stack: a.stack, name: a.name };
-            }
-            if (typeof a === "object") {
-              try { return JSON.parse(JSON.stringify(a)); } catch (_) { return String(a); }
-            }
-            return a;
-          })
-        });
-        if (globalErrors.length > 50) {
-          globalErrors.shift();
-        }
-        (globalThis as any).authErrors = globalErrors;
-      }
-    }
+      console.error(`[Better-Auth ${level}]: ${message}`, ...args);
+      // Persist to global for /api/auth-debug
+      const globalErrors = (globalThis as any).authErrors || [];
+      globalErrors.push({
+        timestamp: new Date().toISOString(),
+        level,
+        message,
+        args: args.map((a) =>
+          a instanceof Error
+            ? { message: a.message, stack: a.stack, name: a.name }
+            : typeof a === "object"
+              ? JSON.stringify(a)
+              : String(a)
+        ),
+      });
+      if (globalErrors.length > 50) globalErrors.shift();
+      (globalThis as any).authErrors = globalErrors;
+    },
   },
   trustedOrigins: [
     env.NEXT_PUBLIC_APP_URL,
     "http://localhost:3000",
     "workoutcool://",
-    "expo://"
+    "expo://",
   ],
   trustHeaders: true,
   account: {
@@ -78,38 +48,6 @@ export const auth = betterAuth({
   },
   plugins: [
     admin(),
-    customSession(async ({ user, session }) => {
-      console.log("⛏️ customSession executed - fetched from DB - whole user and session data is this ->> \n");
-      const userFromDB = await prisma.user.findUnique({
-        where: {
-          id: user.id,
-        },
-        select: {
-          id: true,
-          email: true,
-          emailVerified: true,
-          name: true,
-          firstName: true,
-          lastName: true,
-          image: true,
-          locale: true,
-          role: true,
-          banned: true,
-          banReason: true,
-          banExpires: true,
-          isPremium: true,
-          accounts: {
-            select: { providerId: true },
-          },
-        },
-      });
-
-      // Merge DB fields into the Better Auth user (keeps the correct type, avoids null union)
-      return {
-        user: { ...user, ...(userFromDB ?? {}) },
-        session,
-      };
-    }),
     nextCookies(),
   ],
   user: {
@@ -123,6 +61,10 @@ export const auth = betterAuth({
       },
       lastName: {
         type: "string",
+      },
+      isPremium: {
+        type: "boolean",
+        defaultValue: false,
       },
     },
   },
@@ -143,8 +85,6 @@ export const auth = betterAuth({
         const urlObject = new URL(url);
         const params = new URLSearchParams(urlObject.search);
         params.set("callbackURL", "/");
-
-        // reconstruction
         urlObject.search = params.toString();
         const finalUrl = urlObject.toString();
 
@@ -187,8 +127,7 @@ export const auth = betterAuth({
       clientId: env.GOOGLE_CLIENT_ID,
       clientSecret: env.GOOGLE_CLIENT_SECRET,
       mapProfileToUser: async (profile) => {
-        // DO NOT spread ...profile — it injects unknown Google OAuth fields
-        // (sub, aud, iss, azp, at_hash, etc.) that break the DB insert.
+        // Only return known fields — do NOT spread ...profile
         return {
           name: profile.name || `${profile.given_name || ""} ${profile.family_name || ""}`.trim(),
           email: profile.email,
