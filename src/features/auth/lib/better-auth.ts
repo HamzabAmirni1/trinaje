@@ -12,6 +12,8 @@ import { hashStringWithSalt } from "@/features/update-password/lib/hash";
 import { env } from "@/env";
 
 export const auth = betterAuth({
+  // CRITICAL: must be set explicitly on serverless (Netlify) — auto-detection fails
+  baseURL: env.NEXT_PUBLIC_APP_URL,
   logger: {
     level: "error",
     log: (level, message, ...args) => {
