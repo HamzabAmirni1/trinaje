@@ -11,12 +11,37 @@ import { sendEmail } from "@/shared/lib/mail/sendEmail";
 import { hashStringWithSalt } from "@/features/update-password/lib/hash";
 import { env } from "@/env";
 
+async function logAuthErrorToDb(level: string, message: string, ...args: any[]) {
+  try {
+    const errorDetails = args.map(a => {
+      if (a instanceof Error) {
+        return { message: a.message, stack: a.stack, name: a.name };
+      }
+      if (typeof a === "object") {
+        try { return JSON.parse(JSON.stringify(a)); } catch (_) { return String(a); }
+      }
+      return String(a);
+    });
+
+    await prisma.feedbacks.create({
+      data: {
+        review: 999,
+        message: `[Better-Auth ${level}] ${message} | Details: ${JSON.stringify(errorDetails)}`,
+        email: "system-auth-error@workout.cool",
+      }
+    });
+  } catch (dbErr) {
+    console.error("Failed to log auth error to DB:", dbErr);
+  }
+}
+
 export const auth = betterAuth({
   logger: {
     level: "debug",
     log: (level, message, ...args) => {
       console.log(`[Better-Auth ${level}]:`, message, ...args);
       if (level === "error" || level === "warn") {
+        logAuthErrorToDb(level, message, ...args);
         const globalErrors = (globalThis as any).authErrors || [];
         globalErrors.push({
           timestamp: new Date().toISOString(),

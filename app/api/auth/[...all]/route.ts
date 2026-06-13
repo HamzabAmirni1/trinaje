@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { toNextJsHandler } from "better-auth/next-js";
 import { auth } from "@/features/auth/lib/better-auth";
+import { prisma } from "@/shared/lib/prisma";
 
 const handler = toNextJsHandler(auth);
 
@@ -17,6 +18,19 @@ export async function GET(request: NextRequest) {
       stack: error.stack || null
     });
     (globalThis as any).authErrors = globalErrors;
+
+    try {
+      await prisma.feedbacks.create({
+        data: {
+          review: 999,
+          message: `[Better-Auth Handler GET Error] ${error.message || error.toString()} | Stack: ${error.stack || ""}`,
+          email: "system-auth-error@workout.cool",
+        }
+      });
+    } catch (dbErr) {
+      console.error("Failed to log handler error to DB:", dbErr);
+    }
+
     throw error;
   }
 }
@@ -34,6 +48,19 @@ export async function POST(request: NextRequest) {
       stack: error.stack || null
     });
     (globalThis as any).authErrors = globalErrors;
+
+    try {
+      await prisma.feedbacks.create({
+        data: {
+          review: 999,
+          message: `[Better-Auth Handler POST Error] ${error.message || error.toString()} | Stack: ${error.stack || ""}`,
+          email: "system-auth-error@workout.cool",
+        }
+      });
+    } catch (dbErr) {
+      console.error("Failed to log handler error to DB:", dbErr);
+    }
+
     throw error;
   }
 }

@@ -32,6 +32,18 @@ export async function GET() {
     status.verificationCount = verificationCount;
     status.verificationTableOk = true;
 
+    // Fetch system auth errors stored in feedbacks
+    const authErrors = await prisma.feedbacks.findMany({
+      where: {
+        review: 999,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+      take: 20,
+    });
+    status.persistedAuthErrors = authErrors;
+
     status.databaseConnectionOk = true;
   } catch (err: any) {
     status.databaseConnectionOk = false;
